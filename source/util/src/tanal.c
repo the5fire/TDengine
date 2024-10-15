@@ -103,9 +103,7 @@ static void taosAnalFreeHash(SHashObj *hash) {
 
 void taosAnalCleanup() {
   curl_global_cleanup();
-  if (taosThreadMutexDestroy(&tsAlgos.lock) != 0) {
-    uError("failed to destroy anal lock");
-  }
+  (void)taosThreadMutexDestroy(&tsAlgos.lock);
   taosAnalFreeHash(tsAlgos.hash);
   tsAlgos.hash = NULL;
   uInfo("analysis env is cleaned up");
@@ -117,9 +115,7 @@ void taosAnalUpdate(int64_t newVer, SHashObj *pHash) {
       SHashObj *hash = tsAlgos.hash;
       tsAlgos.ver = newVer;
       tsAlgos.hash = pHash;
-      if (taosThreadMutexUnlock(&tsAlgos.lock) != 0) {
-        uError("failed to unlock hash")
-      }
+      (void)taosThreadMutexUnlock(&tsAlgos.lock);
       taosAnalFreeHash(hash);
     }
   } else {
@@ -178,10 +174,7 @@ int32_t taosAnalGetAlgoUrl(const char *algoName, EAnalAlgoType type, char *url, 
       code = terrno;
       uError("algo:%s, type:%s, url not found", algoName, taosAnalAlgoStr(type));
     }
-    if (taosThreadMutexUnlock(&tsAlgos.lock) != 0) {
-      uError("failed to unlock hash");
-      return TSDB_CODE_OUT_OF_MEMORY;
-    }
+    (void)taosThreadMutexUnlock(&tsAlgos.lock);
   }
 
   return code;
@@ -600,7 +593,7 @@ int32_t taosAnalJsonBufClose(SAnalBuf *pBuf) {
 void taosAnalBufDestroy(SAnalBuf *pBuf) {
   if (pBuf->fileName[0] != 0) {
     if (pBuf->filePtr != NULL) (void)taosCloseFile(&pBuf->filePtr);
-    // taosRemoveFile(pBuf->fileName);
+    (void)taosRemoveFile(pBuf->fileName);
     pBuf->fileName[0] = 0;
   }
 
@@ -609,9 +602,7 @@ void taosAnalBufDestroy(SAnalBuf *pBuf) {
       SAnalColBuf *pCol = &pBuf->pCols[i];
       if (pCol->fileName[0] != 0) {
         if (pCol->filePtr != NULL) (void)taosCloseFile(&pCol->filePtr);
-        if (taosRemoveFile(pCol->fileName) != 0) {
-          uError("failed to remove file %s", pCol->fileName);
-        }
+        (void)taosRemoveFile(pCol->fileName);
         pCol->fileName[0] = 0;
       }
     }
